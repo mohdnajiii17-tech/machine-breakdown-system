@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import DualMachineLookup from './DualMachineLookup';
 import SymptomPicker from './SymptomPicker';
 import SoftwareLotoBanner from './SoftwareLotoBanner';
+import MachineStatusBadge from './MachineStatusBadge';
+import ConfirmationModal from './ConfirmationModal';
 import { useAuth } from '../context/AuthContext';
 import { fetchApi } from '../api/client';
 import { AlertOctagon, CheckCircle2, ShieldAlert, Cpu, ArrowRight, RefreshCw, FileText } from 'lucide-react';
@@ -12,14 +14,21 @@ export default function OperatorView() {
   const [symptom, setSymptom] = useState('STOPPED');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [successResult, setSuccessResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleReportBreakdown = async (e) => {
+  const handleTriggerConfirmModal = (e) => {
     e.preventDefault();
+    if (!selectedMachine) return;
+    setShowConfirmModal(true);
+  };
+
+  const handleReportBreakdown = async () => {
     if (!selectedMachine) return;
     setIsSubmitting(true);
     setErrorMsg('');
+    setShowConfirmModal(false);
 
     try {
       const res = await fetchApi('/breakdowns', {
@@ -50,27 +59,28 @@ export default function OperatorView() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <header className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
-            Operator Interface
+            Machine Operator Workspace
           </span>
-          <h2 className="text-lg font-bold text-slate-100 mt-0.5">
-            Quick Machine Breakdown Reporting & Software Lock Engagement
-          </h2>
+          <h1 className="text-lg font-bold text-slate-100 mt-0.5">
+            Quick Symptom Breakdown Reporting & Digital Lock Activation
+          </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Report machine issues in seconds with 1-tap symptom selection. Submitting automatically engages the digital maintenance lock and calculates priority.
+            Report machine symptoms in 1 tap. Submitting immediately engages the digital maintenance lock and calculates rule-based priority.
           </p>
         </div>
 
         <button
           onClick={refreshData}
-          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition-all flex items-center gap-2"
+          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition-all flex items-center gap-2 focus:ring-2 focus:ring-cyan-500"
+          aria-label="Refresh Machine Telemetry Data"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh Status
         </button>
-      </div>
+      </header>
 
       {/* Step 1: Machine Selection (Dual Lookup) */}
       {!successResult && (
@@ -82,7 +92,7 @@ export default function OperatorView() {
 
           {/* Selected Machine Card & Symptom Form */}
           {selectedMachine && (
-            <form onSubmit={handleReportBreakdown} className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6 animate-fadeIn">
+            <form onSubmit={handleTriggerConfirmModal} className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6 animate-fadeIn">
               <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-3">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-cyan-950 text-cyan-400 rounded-xl border border-cyan-800/50">
@@ -90,19 +100,13 @@ export default function OperatorView() {
                   </div>
                   <div>
                     <span className="text-xs font-mono text-cyan-400 font-bold">{selectedMachine.machineId}</span>
-                    <h3 className="font-bold text-base text-slate-100">{selectedMachine.name}</h3>
+                    <h2 className="font-bold text-base text-slate-100">{selectedMachine.name}</h2>
                     <p className="text-xs text-slate-400">{selectedMachine.lineLocation} • Criticality: <strong className="text-amber-400">{selectedMachine.criticality}</strong></p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold font-mono border ${
-                    selectedMachine.status === 'AVAILABLE'
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
-                      : 'bg-red-950 text-red-300 border-red-500/40 animate-pulse'
-                  }`}>
-                    {selectedMachine.status}
-                  </span>
+                  <MachineStatusBadge status={selectedMachine.status} />
                 </div>
               </div>
 
@@ -114,13 +118,14 @@ export default function OperatorView() {
 
               {/* Optional Operator Notes */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
+                <label htmlFor="operator-notes" className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-cyan-400" />
                   Optional Observations / Notes
                 </label>
                 <textarea
+                  id="operator-notes"
                   rows="2"
-                  placeholder="E.g. Smoke coming from rear spindle, line stopped at 14:20..."
+                  placeholder="E.g. Heavy grinding noise from spindle gear, line halted at 14:20..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
@@ -128,7 +133,7 @@ export default function OperatorView() {
               </div>
 
               {errorMsg && (
-                <div className="p-3 bg-red-950/80 border border-red-500/40 rounded-lg text-xs text-red-300">
+                <div className="p-3 bg-red-950/80 border border-red-500/40 rounded-lg text-xs text-red-300" role="alert">
                   {errorMsg}
                 </div>
               )}
@@ -148,7 +153,7 @@ export default function OperatorView() {
                   disabled={isSubmitting || selectedMachine.status !== 'AVAILABLE'}
                   className={`py-3 px-6 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-lg ${
                     selectedMachine.status === 'AVAILABLE'
-                      ? 'bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-slate-950 shadow-red-950/50'
+                      ? 'bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-slate-950 shadow-red-950/50 focus:ring-2 focus:ring-red-500'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                   }`}
                 >
@@ -161,6 +166,22 @@ export default function OperatorView() {
         </>
       )}
 
+      {/* Safety Confirmation Modal Before Submitting Breakdown */}
+      {selectedMachine && (
+        <ConfirmationModal
+          isOpen={showConfirmModal}
+          title="Confirm Breakdown & Lockout"
+          message={`Are you sure you want to report a breakdown for '${selectedMachine.name} (${selectedMachine.machineId})'? This action will immediately engage the Digital Maintenance Software Lock and flag the equipment as UNAVAILABLE.`}
+          machineId={selectedMachine.machineId}
+          actionType="DANGER"
+          confirmText="Yes, Engage Software Lock"
+          cancelText="Go Back"
+          onConfirm={handleReportBreakdown}
+          onCancel={() => setShowConfirmModal(false)}
+          isProcessing={isSubmitting}
+        />
+      )}
+
       {/* Success Modal / Card after reporting breakdown */}
       {successResult && (
         <div className="bg-slate-900 border border-emerald-500/40 rounded-xl p-6 shadow-2xl space-y-6 text-slate-200 animate-fadeIn">
@@ -170,7 +191,7 @@ export default function OperatorView() {
             </div>
             <div>
               <span className="text-xs font-mono text-emerald-400 font-bold uppercase">Breakdown Ticket Generated</span>
-              <h3 className="text-xl font-extrabold text-slate-100">{successResult.breakdown?.breakdownId}</h3>
+              <h2 className="text-xl font-extrabold text-slate-100">{successResult.breakdown?.breakdownId}</h2>
               <p className="text-xs text-slate-400">Software Maintenance Lock successfully engaged for <strong className="text-cyan-400">{successResult.breakdown?.machineId}</strong>.</p>
             </div>
           </div>
@@ -194,7 +215,7 @@ export default function OperatorView() {
 
           <button
             onClick={handleResetForm}
-            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs rounded-xl border border-slate-700 transition-all"
+            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs rounded-xl border border-slate-700 transition-all focus:ring-2 focus:ring-cyan-500"
           >
             Report Another Breakdown
           </button>

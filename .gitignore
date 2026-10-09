@@ -5,6 +5,7 @@ frontend/node_modules/
 # build outputs
 dist/
 frontend/dist/
+.netlify/
 
 # environment & local files
 .env

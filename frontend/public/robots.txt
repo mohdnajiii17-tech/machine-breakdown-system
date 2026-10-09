@@ -1,0 +1,8 @@
+# Production Robots.txt for Industrial Machine Breakdown & Maintenance Lock System
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+
+Sitemap: https://loto.factory.internal/sitemap.xml

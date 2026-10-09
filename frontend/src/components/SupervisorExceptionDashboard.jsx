@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import SoftwareLotoBanner from './SoftwareLotoBanner';
+import MachineStatusBadge from './MachineStatusBadge';
+import ConfirmationModal from './ConfirmationModal';
 import { useAuth } from '../context/AuthContext';
 import { fetchApi } from '../api/client';
 import { 
@@ -26,6 +28,7 @@ export default function SupervisorExceptionDashboard() {
     { id: 'I-05', item: 'Perform low-speed manual jog / preliminary rotation test run', verified: true }
   ]);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
   // Exception Filters:
@@ -92,8 +95,18 @@ export default function SupervisorExceptionDashboard() {
   // Submit Supervisor Pre-Restart Safety Inspection (Approve / Reject)
   const handleSubmitInspection = async (passed) => {
     if (!inspectionJobCard) return;
+    if (passed) {
+      setShowReleaseConfirm(true);
+      return;
+    }
+    await executeInspection(false);
+  };
+
+  const executeInspection = async (passed) => {
+    if (!inspectionJobCard) return;
     setIsInspecting(true);
     setStatusMsg('');
+    setShowReleaseConfirm(false);
 
     try {
       const res = await fetchApi(`/job-cards/${inspectionJobCard.jobId}/supervisor-inspection`, {
@@ -168,7 +181,7 @@ export default function SupervisorExceptionDashboard() {
       </div>
 
       {statusMsg && (
-        <div className="p-3 bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 rounded-lg">
+        <div className="p-3 bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 rounded-lg" role="status">
           {statusMsg}
         </div>
       )}
@@ -177,10 +190,10 @@ export default function SupervisorExceptionDashboard() {
       {pendingInspections.length > 0 && (
         <div className="bg-slate-900 border border-cyan-500/40 rounded-xl p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-cyan-400" />
               Pending Pre-Restart Safety Inspections & Software Lock Release
-            </h3>
+            </h2>
             <span className="text-xs font-mono bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800/50 font-bold">
               {pendingInspections.length} ACTION REQUIRED
             </span>
@@ -195,12 +208,10 @@ export default function SupervisorExceptionDashboard() {
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-xs font-mono text-cyan-400 font-bold">{job.machineId}</span>
-                      <h4 className="font-bold text-sm text-slate-100">{machine?.name}</h4>
+                      <h3 className="font-bold text-sm text-slate-100">{machine?.name}</h3>
                       <p className="text-xs text-slate-400">Assigned Tech: {job.assignedTechnicianId}</p>
                     </div>
-                    <span className="px-2.5 py-1 bg-amber-950 text-amber-300 rounded text-xs font-mono font-bold border border-amber-500/30">
-                      REPAIR COMPLETED
-                    </span>
+                    <MachineStatusBadge status="INSPECTION_REQUIRED" size="sm" />
                   </div>
 
                   <div className="bg-slate-900 p-2.5 rounded text-xs text-slate-300 border border-slate-850">
@@ -209,7 +220,7 @@ export default function SupervisorExceptionDashboard() {
 
                   <button
                     onClick={() => setInspectionJobCard(job)}
-                    className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-md"
+                    className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-md focus:ring-2 focus:ring-cyan-500"
                   >
                     <FileCheck className="w-4 h-4" />
                     Perform 5-Point Pre-Restart Safety Inspection
@@ -224,10 +235,10 @@ export default function SupervisorExceptionDashboard() {
       {/* Exception Section 2: Unassigned Breakdown Tickets (Rule-Based Technician Recommendation) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
             <AlertOctagon className="w-5 h-5 text-amber-400" />
             Unassigned Breakdown Tickets (Rule-Based Dispatch)
-          </h3>
+          </h2>
           <span className="text-xs text-slate-400 font-mono">
             {unassignedBreakdowns.length} Ticket(s) Pending Assignment
           </span>
@@ -252,7 +263,7 @@ export default function SupervisorExceptionDashboard() {
                       </span>
                     </div>
 
-                    <h4 className="font-bold text-sm text-slate-100">{machine?.name || ticket.machineId}</h4>
+                    <h3 className="font-bold text-sm text-slate-100">{machine?.name || ticket.machineId}</h3>
                     <p className="text-xs text-amber-300 mt-1 font-semibold">{ticket.symptomLabel}</p>
 
                     {ticket.repeatedFailureFlag && (
@@ -265,7 +276,7 @@ export default function SupervisorExceptionDashboard() {
 
                   <button
                     onClick={() => handleOpenAssignModal(ticket)}
-                    className="w-full mt-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-1.5"
+                    className="w-full mt-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-cyan-500"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     Review Auto-Tech Recommendation & Assign
@@ -279,7 +290,7 @@ export default function SupervisorExceptionDashboard() {
 
       {/* Technician Assignment Modal with Rule-Based Recommendations */}
       {selectedBreakdownForAssign && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn" role="dialog" aria-modal="true">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
@@ -353,7 +364,7 @@ export default function SupervisorExceptionDashboard() {
               <button
                 type="submit"
                 disabled={isAssigning || !selectedTechId}
-                className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition-all"
+                className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition-all focus:ring-2 focus:ring-cyan-500"
               >
                 {isAssigning ? 'Confirming...' : 'Confirm Dispatch Assignment'}
               </button>
@@ -364,7 +375,7 @@ export default function SupervisorExceptionDashboard() {
 
       {/* 5-Point Pre-Restart Safety Inspection Modal */}
       {inspectionJobCard && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn" role="dialog" aria-modal="true">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
@@ -412,10 +423,11 @@ export default function SupervisorExceptionDashboard() {
             {/* Supervisor PIN & Notes */}
             <div className="space-y-3 pt-1">
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
+                <label htmlFor="sup-inspection-notes" className="text-[11px] font-semibold text-slate-400 block mb-1">
                   Supervisor Inspection Notes:
                 </label>
                 <input
+                  id="sup-inspection-notes"
                   type="text"
                   placeholder="Guards verified, tools cleared, zero-energy test passed..."
                   value={supervisorNotes}
@@ -425,11 +437,12 @@ export default function SupervisorExceptionDashboard() {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1 flex items-center gap-1">
+                <label htmlFor="sup-pin" className="text-[11px] font-semibold text-slate-400 block mb-1 flex items-center gap-1">
                   <Key className="w-3.5 h-3.5 text-amber-400" />
                   Supervisor Authorization PIN:
                 </label>
                 <input
+                  id="sup-pin"
                   type="password"
                   placeholder="Enter 4-digit EHS PIN (e.g. 1234)..."
                   value={supervisorPin}
@@ -454,7 +467,7 @@ export default function SupervisorExceptionDashboard() {
                 type="button"
                 onClick={() => handleSubmitInspection(true)}
                 disabled={isInspecting}
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-lg flex items-center gap-2"
+                className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-lg flex items-center gap-2 focus:ring-2 focus:ring-emerald-500"
               >
                 <ShieldCheck className="w-4 h-4" />
                 Approve Safety Clearance & Release Software Lock
@@ -463,6 +476,20 @@ export default function SupervisorExceptionDashboard() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Before Releasing Digital Maintenance Lock */}
+      <ConfirmationModal
+        isOpen={showReleaseConfirm}
+        title="Confirm Safety Clearance & Software Lock Release"
+        message={`Are you sure you want to approve pre-restart safety clearance for '${inspectionJobCard?.machineId}' and release the digital maintenance lock? The machine will be restored to OPERATIONAL (AVAILABLE) status.`}
+        machineId={inspectionJobCard?.machineId}
+        actionType="INFO"
+        confirmText="Release Software Lock & Restore Operational Status"
+        cancelText="Review Again"
+        onConfirm={() => executeInspection(true)}
+        onCancel={() => setShowReleaseConfirm(false)}
+        isProcessing={isInspecting}
+      />
     </div>
   );
 }

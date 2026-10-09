@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import SoftwareLotoBanner from './SoftwareLotoBanner';
+import MachineStatusBadge from './MachineStatusBadge';
+import ConfirmationModal from './ConfirmationModal';
 import { useAuth } from '../context/AuthContext';
 import { fetchApi } from '../api/client';
 import { 
@@ -16,6 +18,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
   const [selectedPartId, setSelectedPartId] = useState('');
   const [partQuantity, setPartQuantity] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
   const handleToggleChecklist = (checkId) => {
@@ -23,8 +26,17 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
   };
 
   const handleUpdateStage = async (newStage) => {
+    if (newStage === 'COMPLETED') {
+      setShowCompleteConfirm(true);
+      return;
+    }
+    await executeStageUpdate(newStage);
+  };
+
+  const executeStageUpdate = async (newStage) => {
     setIsUpdating(true);
     setStatusMsg('');
+    setShowCompleteConfirm(false);
 
     try {
       await fetchApi(`/job-cards/${jobCard.jobId}/stage`, {
@@ -110,21 +122,19 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
               Breakdown: {jobCard.breakdownId}
             </span>
           </div>
-          <h3 className="text-xl font-extrabold text-slate-100 mt-1 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-slate-100 mt-1 flex items-center gap-2">
             <Wrench className="w-5 h-5 text-amber-400" />
             {machine?.name || jobCard.machineId}
-          </h3>
+          </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Location: {machine?.lineLocation} • Symptom: <strong className="text-amber-300">{breakdown?.symptomLabel || breakdown?.reportedSymptom}</strong>
           </p>
         </div>
 
-        <div className="text-right">
-          <span className="text-[10px] text-slate-400 block font-mono">PRIORITY TIER</span>
-          <span className={`inline-block px-3 py-1 rounded text-xs font-extrabold font-mono uppercase ${
-            breakdown?.priorityTier === 'CRITICAL' ? 'bg-red-950 text-red-400 border border-red-500/40' : 'bg-amber-950 text-amber-400 border border-amber-500/40'
-          }`}>
-            {breakdown?.priorityTier || 'HIGH'} ({breakdown?.calculatedPriorityScore}/100)
+        <div className="text-right flex flex-col items-end gap-1">
+          <MachineStatusBadge status={machine?.status || 'UNDER_MAINTENANCE'} />
+          <span className="text-[10px] text-slate-400 font-mono">
+            Priority: <strong className="text-red-400">{breakdown?.priorityTier} ({breakdown?.calculatedPriorityScore}/100)</strong>
           </span>
         </div>
       </div>
@@ -137,7 +147,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
         <span className="text-xs font-semibold text-slate-400 block mb-2 uppercase tracking-wider">
           Structured Repair Progress Steps:
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2" role="group" aria-label="Repair Progress Steps">
           {STAGES.map((s, idx) => {
             const isActive = activeStage === s.id;
             const isPast = STAGES.findIndex(x => x.id === activeStage) > idx;
@@ -163,7 +173,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
       </div>
 
       {statusMsg && (
-        <div className="p-3 bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 rounded-lg">
+        <div className="p-3 bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 rounded-lg" role="status">
           {statusMsg}
         </div>
       )}
@@ -176,10 +186,10 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
           
           {/* Auto Surfaced History Box */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
+            <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
               <History className="w-4 h-4 text-cyan-400" />
               Auto-Surfaced Machine History
-            </h4>
+            </h3>
 
             {jobCard.surfacedHistory ? (
               <div className="grid grid-cols-2 gap-3 text-xs font-mono">
@@ -203,10 +213,10 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
 
           {/* Suggested Safety & Technical Checklist */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
+            <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
               <CheckSquare className="w-4 h-4 text-emerald-400" />
               Suggested Inspection & Safety Checklist
-            </h4>
+            </h3>
 
             <div className="space-y-2">
               {checklist.map(item => (
@@ -236,16 +246,17 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
           
           {/* Findings & Action Taken Form */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
+            <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider border-b border-slate-800 pb-2">
               <Wrench className="w-4 h-4 text-amber-400" />
               Diagnostic Findings & Action Log
-            </h4>
+            </h3>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-400 block mb-1">
+              <label htmlFor="findings-text" className="text-[11px] font-semibold text-slate-400 block mb-1">
                 Root Cause Finding:
               </label>
               <input
+                id="findings-text"
                 type="text"
                 placeholder="E.g. Spindle bearing ball worn, thermal sensor failure..."
                 value={findingsText}
@@ -255,10 +266,11 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-400 block mb-1">
+              <label htmlFor="action-taken-text" className="text-[11px] font-semibold text-slate-400 block mb-1">
                 Action Taken / Repair Executed:
               </label>
               <textarea
+                id="action-taken-text"
                 rows="2"
                 placeholder="E.g. Replaced bearing 6205, lubricated housing, calibrated 0-axis..."
                 value={actionTakenText}
@@ -271,10 +283,10 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
           {/* Spare Parts Stock Checker & Usage Logger */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider">
                 <PackageCheck className="w-4 h-4 text-cyan-400" />
                 Spare Parts Stock & Usage
-              </h4>
+              </h3>
 
               <button
                 type="button"
@@ -288,6 +300,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
             {/* Deduct Spare Part Form */}
             <form onSubmit={handleLogSparePart} className="flex gap-2">
               <select
+                aria-label="Select Spare Part from Stock"
                 value={selectedPartId}
                 onChange={(e) => setSelectedPartId(e.target.value)}
                 className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
@@ -304,6 +317,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
                 type="number"
                 min="1"
                 max="10"
+                aria-label="Spare Part Quantity"
                 value={partQuantity}
                 onChange={(e) => setPartQuantity(e.target.value)}
                 className="w-16 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 text-center"
@@ -311,7 +325,7 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
 
               <button
                 type="submit"
-                className="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-3 py-2 rounded-lg text-xs transition-all"
+                className="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-3 py-2 rounded-lg text-xs transition-all focus:ring-2 focus:ring-cyan-500"
               >
                 Deduct
               </button>
@@ -348,13 +362,27 @@ export default function TechnicianJobCard({ jobCard, machine, breakdown }) {
           className={`py-3 px-6 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg ${
             activeStage === 'COMPLETED'
               ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 cursor-default'
-              : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950'
+              : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 focus:ring-2 focus:ring-emerald-500'
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
           {activeStage === 'COMPLETED' ? 'Submitted for Supervisor Inspection' : 'Complete Repair & Request Supervisor Release'}
         </button>
       </div>
+
+      {/* Confirmation Modal Before Completing Job */}
+      <ConfirmationModal
+        isOpen={showCompleteConfirm}
+        title="Confirm Repair Completion"
+        message={`Are you sure you want to mark repair work for '${machine?.name || jobCard.machineId}' as COMPLETED and submit for Supervisor Safety Inspection?`}
+        machineId={jobCard.machineId}
+        actionType="INFO"
+        confirmText="Submit for Supervisor Inspection"
+        cancelText="Keep Editing"
+        onConfirm={() => executeStageUpdate('COMPLETED')}
+        onCancel={() => setShowCompleteConfirm(false)}
+        isProcessing={isUpdating}
+      />
     </div>
   );
 }
