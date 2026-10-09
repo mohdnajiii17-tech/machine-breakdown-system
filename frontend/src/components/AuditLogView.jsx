@@ -23,9 +23,9 @@ export default function AuditLogView() {
           <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
             EHS Compliance & Security
           </span>
-          <h2 className="text-lg font-bold text-slate-100 mt-0.5">
+          <h1 className="text-lg font-bold text-slate-100 mt-0.5">
             Immutable Maintenance Lock Audit Log
-          </h2>
+          </h1>
           <p className="text-xs text-slate-400 mt-1">
             Complete chronological record of all software lockout events, state transitions, technician work logs, and supervisor safety clearances.
           </p>

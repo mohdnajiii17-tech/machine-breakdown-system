@@ -25,9 +25,9 @@ export default function TechnicianView() {
           <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
             Technician Job Portal
           </span>
-          <h2 className="text-lg font-bold text-slate-100 mt-0.5">
+          <h1 className="text-lg font-bold text-slate-100 mt-0.5">
             Ready-Made Technician Job Cards & Repair Execution
-          </h2>
+          </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
             View pre-surfaced machine history, spare parts stock, suggested safety checklists, and update repair progress through structured stages.
           </p>

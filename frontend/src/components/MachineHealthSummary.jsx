@@ -12,9 +12,9 @@ export default function MachineHealthSummary() {
         <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
           Equipment Intelligence
         </span>
-        <h2 className="text-lg font-bold text-slate-100 mt-0.5">
+        <h1 className="text-lg font-bold text-slate-100 mt-0.5">
           Machine Health Summaries & Reliability Telemetry
-        </h2>
+        </h1>
         <p className="text-xs text-slate-400 mt-1">
           Aggregated MTTR (Mean Time To Repair), breakdown frequency, repeated-failure alerts, and health scores across factory lines.
         </p>

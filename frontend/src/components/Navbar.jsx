@@ -60,12 +60,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
             <Cpu className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-bold text-lg text-slate-100 tracking-tight flex items-center gap-2">
+            <span className="font-bold text-lg text-slate-100 tracking-tight flex items-center gap-2">
               Industrial Breakdown & Maintenance Lock
-            </h1>
+            </span>
             <p className="text-xs text-slate-400 flex items-center gap-2">
               <span>Active User: <strong className="text-cyan-400">{currentUser.name}</strong></span>
-              <span className="text-slate-600">•</span>
+              <span className="text-slate-600" aria-hidden="true">•</span>
               <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono border border-slate-700">
                 {currentUser.role}
               </span>

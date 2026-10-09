@@ -14,9 +14,9 @@ export default function SupervisorView() {
           <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
             Supervisor & EHS Command Dashboard
           </span>
-          <h2 className="text-lg font-bold text-slate-100 mt-0.5">
+          <h1 className="text-lg font-bold text-slate-100 mt-0.5">
             Exception-Based Supervision & Pre-Restart Safety Clearance
-          </h2>
+          </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
             Focus attention on critical line stops, rule-based technician recommendation confirmation, missing part delays, and 5-point safety inspections.
           </p>
